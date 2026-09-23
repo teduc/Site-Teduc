@@ -153,20 +153,26 @@ def main():
     open('/tmp/_lit.js', 'w', encoding='utf-8').write('module.exports=' + lit + ';')
     dic = json.loads(sh('node', '-e',
         "process.stdout.write(JSON.stringify(require('/tmp/_lit.js')))"))
-    inner = inner[:k0] + '  I18N.en=I18N.en||{}; I18N.es=I18N.es||{};' + inner[k1:]
+    # idiomas traduzidos: um arquivo de valores por idioma, indexado pelas chaves
+    LANGS_T = [k for k in dic if k not in ('pt',)]
+    inner = (inner[:k0]
+             + '  ' + ' '.join("I18N.%s=I18N.%s||{};" % (l, l) for l in LANGS_T)
+             + inner[k1:])
 
     keys = list(dic['en'].keys())
-    extra = {k: v for k, v in dic.items() if k not in ('en', 'es')}
-    data = {
-        'i18n-keys.js': 'var I18N_K=' + json.dumps(keys, ensure_ascii=False) + ';\n',
-        'i18n-en.js': 'var I18N_EN=' + json.dumps([dic['en'][k] for k in keys], ensure_ascii=False) + ';\n',
-        'i18n-es.js': 'var I18N_ES=' + json.dumps([dic['es'].get(k, dic['en'][k]) for k in keys], ensure_ascii=False) + ';\n',
-        'i18n-build.js': ('var I18N=Object.assign({en:{},es:{}},'
-                          + json.dumps(extra, ensure_ascii=False) + ');\n'
-                          '(function(){for(var i=0;i<I18N_K.length;i++){'
-                          'I18N.en[I18N_K[i]]=I18N_EN[i];I18N.es[I18N_K[i]]=I18N_ES[i];}\n'
-                          'I18N_K=I18N_EN=I18N_ES=null;})();\n'),
-    }
+    extra = {k: v for k, v in dic.items() if k not in LANGS_T}
+    data = {'i18n-keys.js': 'var I18N_K=' + json.dumps(keys, ensure_ascii=False) + ';\n'}
+    for l in LANGS_T:
+        data['i18n-%s.js' % l] = ('var I18N_%s=' % l.upper()
+                                  + json.dumps([dic[l].get(k, dic['en'][k]) for k in keys],
+                                               ensure_ascii=False) + ';\n')
+    data['i18n-build.js'] = (
+        'var I18N=Object.assign({' + ','.join('%s:{}' % l for l in LANGS_T) + '},'
+        + json.dumps(extra, ensure_ascii=False) + ');\n'
+        '(function(){for(var i=0;i<I18N_K.length;i++){'
+        + ''.join('I18N.%s[I18N_K[i]]=I18N_%s[i];' % (l, l.upper()) for l in LANGS_T)
+        + '}\n'
+        + 'I18N_K=' + '='.join('I18N_%s' % l.upper() for l in LANGS_T) + '=null;})();\n')
 
     # PAGES: array grande de dados -> arquivos separados
     pm = re.search(r'(?m)^ *var PAGES *= *\[', inner)
@@ -214,7 +220,7 @@ def main():
         open(path, 'w', encoding='utf-8').write(content)
         files.append('assets/js/' + name)
 
-    for n in ('i18n-keys.js', 'i18n-en.js', 'i18n-es.js'):
+    for n in ['i18n-keys.js'] + ['i18n-%s.js' % l for l in LANGS_T]:
         chunks = [data[n]] if len(data[n].encode()) <= MAXCHUNK else None
         if chunks is None:
             arr = json.loads(data[n][data[n].index('=') + 1:].rstrip(';\n'))

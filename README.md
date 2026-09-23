@@ -25,6 +25,7 @@ Para ver localmente:
       i18n-keys.js            chaves em português
       i18n-en.js              traduções em inglês
       i18n-es.js              traduções em espanhol
+      i18n-fr.js              traduções em francês
       i18n-build.js           monta o dicionário
       i18n-core.js            detecção de idioma e tradução em tempo real
       pages-*.js              conteúdo das páginas internas
@@ -37,9 +38,10 @@ Para ver localmente:
 ## Idiomas
 
 Português do Brasil é o padrão. O site segue o idioma do navegador (português,
-espanhol ou inglês) e abre em inglês para os demais. A escolha manual do visitante
-é guardada no navegador e tem prioridade. Robôs de prévia de link recebem sempre
-português.
+espanhol, inglês ou francês) e abre em inglês para os demais. A escolha manual do
+visitante é guardada no navegador e tem prioridade. Robôs de prévia de link recebem
+sempre português. As páginas de Privacidade, Cookies, Acessibilidade e Termos de uso
+são publicadas em português nos quatro idiomas, com uma nota indicando isso.
 
 ## Como alterar o conteúdo
 

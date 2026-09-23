@@ -32,7 +32,8 @@ Para ver localmente:
       app-*.js                comportamento (rolagem, rotas, menu, ciclo)
     assets/clientes/        logos das empresas
     assets/logo/            logo e favicons
-    assets/og/              imagem de compartilhamento
+    assets/og/              imagens de compartilhamento (pt, en, es, fr)
+    en/ es/ fr/             cartao de compartilhamento no idioma, redireciona para /
     fonte/                  arquivo de origem e script de geração
 
 ## Idiomas

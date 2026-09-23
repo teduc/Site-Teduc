@@ -17,6 +17,10 @@ MEDIA = '/home/claude/teduc-media'          # imagens ja otimizadas
 BIN   = '/tmp/claude-0/-home-claude/d9622a65-cc65-5842-bbf2-35a56561122f/scratchpad/min/node_modules/.bin'
 MAXCHUNK = 36000                            # tamanho alvo por arquivo (bytes)
 
+# endereco publico: og:image e og:url precisam de URL absoluta para o WhatsApp
+# e os demais apps mostrarem a previa do link
+SITE = 'https://teduc.com.br'
+
 BLOB = {
  'fe235c9ff9b2299653c77055b2ac9f40': 'assets/clientes/conexia.png',
  '5aea8da8d7fbcc0a187f5a449e45b866': 'assets/clientes/cogna.png',
@@ -107,6 +111,12 @@ def main():
             sys.exit('asset do artifact nao encontrado: ' + k)
         s = s.replace('/_blob/' + k, v)
 
+    # previa de link: caminhos relativos nao funcionam nos apps de mensagem
+    s = s.replace('content="assets/og/', 'content="' + SITE + '/assets/og/')
+    og_url = '<meta property="og:url" content="' + SITE + '/">\n'
+    s = s.replace('<meta property="og:type" content="website">',
+                  og_url + '<meta property="og:type" content="website">')
+
     i = s.index('  /* Logo oficial Teduc')
     j = s.index('  /* ---------- Páginas internas', i)
     s = s[:i] + LOGO_JS + '\n\n' + s[j:]
@@ -128,6 +138,48 @@ def main():
         shutil.copy2(MEDIA + '/og/' + f, OUT + '/assets/og/' + f)
     for f in ('site.webmanifest', 'vercel.json'):
         shutil.copy2(MEDIA + '/' + f, OUT + '/' + f)
+
+    # /en, /es e /fr: mesma capa, cartao de compartilhamento no idioma.
+    # Um rastreador de link nao informa o idioma do leitor, entao quem quiser
+    # uma previa traduzida compartilha o endereco correspondente.
+    CARD = {
+        'en': ('en_US', 'Teduc — Education and technology ecosystem',
+               'Learning, strategy, artificial intelligence and product development in one ecosystem. So that people, companies and public institutions move from intention to delivery.',
+               'Teduc — Turn knowledge and AI into solutions that work.'),
+        'es': ('es_ES', 'Teduc — Ecosistema de educación y tecnología',
+               'Formación, estrategia, inteligencia artificial y desarrollo de producto en el mismo ecosistema. Todo para que personas, empresas e instituciones públicas pasen de la intención a la entrega.',
+               'Teduc — Transforma conocimiento e IA en soluciones que funcionan.'),
+        'fr': ('fr_FR', 'Teduc — Écosystème d’éducation et de technologie',
+               'Formation, stratégie, intelligence artificielle et développement de produit dans un même écosystème. Tout cela pour que les personnes, les entreprises et les institutions publiques passent de l’intention à la livraison.',
+               'Teduc — Transformez la connaissance et l’IA en solutions qui fonctionnent.'),
+    }
+    for lg, (loc, title, desc, alt) in CARD.items():
+        os.makedirs(OUT + '/' + lg, exist_ok=True)
+        img = SITE + '/assets/og/teduc-og-' + lg + '.png'
+        open(OUT + '/' + lg + '/index.html', 'w', encoding='utf-8').write(
+            '<!DOCTYPE html>\n<html lang="' + lg + '">\n<head>\n<meta charset="utf-8">\n'
+            '<title>' + title + '</title>\n'
+            '<meta name="description" content="' + desc + '">\n'
+            '<link rel="canonical" href="' + SITE + '/">\n'
+            '<meta property="og:type" content="website">\n'
+            '<meta property="og:site_name" content="Teduc">\n'
+            '<meta property="og:locale" content="' + loc + '">\n'
+            '<meta property="og:url" content="' + SITE + '/' + lg + '">\n'
+            '<meta property="og:title" content="' + title + '">\n'
+            '<meta property="og:description" content="' + desc + '">\n'
+            '<meta property="og:image" content="' + img + '">\n'
+            '<meta property="og:image:type" content="image/png">\n'
+            '<meta property="og:image:width" content="1200">\n'
+            '<meta property="og:image:height" content="630">\n'
+            '<meta property="og:image:alt" content="' + alt + '">\n'
+            '<meta name="twitter:card" content="summary_large_image">\n'
+            '<meta name="twitter:title" content="' + title + '">\n'
+            '<meta name="twitter:description" content="' + desc + '">\n'
+            '<meta name="twitter:image" content="' + img + '">\n'
+            '<script>try{localStorage.setItem("teducLang","' + lg + '")}catch(e){}'
+            'location.replace("/");</script>\n'
+            '<meta http-equiv="refresh" content="0; url=/">\n'
+            '</head>\n<body></body>\n</html>\n')
 
     # CSS
     a = s.index('<style>'); b = s.index('</style>') + len('</style>')
